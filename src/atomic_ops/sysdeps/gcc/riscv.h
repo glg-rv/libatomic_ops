@@ -25,6 +25,64 @@
 # endif
 #endif /* !__clang__ */
 
+# if defined(__riscv_zacas)
+
+#define AO_SKIPATOMIC_double_load
+#define AO_SKIPATOMIC_double_load_acquire
+#define AO_SKIPATOMIC_double_store
+#define AO_SKIPATOMIC_double_store_release
+
+# include "../standard_ao_double_t.h"
+
+  AO_INLINE int
+  AO_double_compare_and_swap(volatile AO_double_t *addr,
+                             AO_double_t old_val, AO_double_t new_val)
+  {
+    AO_double_t expected = old_val;
+
+    asm volatile ("amocas.q %0, %z2, %1\n\t" : "+rJ" (expected.AO_whole), "+A"(*addr) : "rJ"(new_val.AO_whole));
+
+    return expected.AO_whole == old_val.AO_whole;
+  }
+# define AO_HAVE_double_compare_and_swap
+
+  AO_INLINE int
+  AO_double_compare_and_swap_acquire(volatile AO_double_t *addr,
+                                     AO_double_t old_val, AO_double_t new_val)
+  {
+    AO_double_t expected = old_val;
+
+    asm volatile ("amocas.q.aq %0, %z2, %1\n\t" : "+rJ" (expected.AO_whole), "+A"(*addr) : "rJ"(new_val.AO_whole));
+
+    return expected.AO_whole == old_val.AO_whole;
+  }
+# define AO_HAVE_double_compare_and_swap_acquire
+
+  AO_INLINE int
+  AO_double_compare_and_swap_release(volatile AO_double_t *addr,
+                                     AO_double_t old_val, AO_double_t new_val)
+  {
+    AO_double_t expected = old_val;
+
+    asm volatile ("amocas.q.rl %0, %z2, %1\n\t" : "+rJ" (expected.AO_whole), "+A"(*addr) : "rJ"(new_val.AO_whole));
+
+    return expected.AO_whole == old_val.AO_whole;
+  }
+# define AO_HAVE_double_compare_and_swap_release
+
+  AO_INLINE int
+  AO_double_compare_and_swap_full(volatile AO_double_t *addr,
+                                  AO_double_t old_val, AO_double_t new_val)
+  {
+    AO_double_t expected = old_val;
+
+    asm volatile ("amocas.q.aqrl %0, %z2, %1\n\t" : "+rJ" (expected.AO_whole), "+A"(*addr) : "rJ"(new_val.AO_whole));
+
+    return expected.AO_whole == old_val.AO_whole;
+  }
+# define AO_HAVE_double_compare_and_swap_full
+#endif /* !__riscv_zacas */
+
 #include "generic.h"
 
 #undef AO_GCC_FORCE_HAVE_CAS
